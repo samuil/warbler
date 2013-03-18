@@ -217,19 +217,15 @@ module Warbler
     end
 
     def create_jar(jar_path, entries)
+      puts "DEBUG: create_jar"
       Zip::ZipFile.open(jar_path, Zip::ZipFile::CREATE) do |zipfile|
-        entries.keys.sort.each do |entry|
-          src = entries[entry]
+        puts "DEBUG: create zip"
+        entries.each do |entry, src|
+          puts "DEBUG: #{entry} => #{src}"
+          next if src.nil?
+
           if src.respond_to?(:read)
             zipfile.get_output_stream(entry) {|f| f << src.read }
-          elsif src.nil? || File.directory?(src)
-            if File.symlink?(entry) && ! defined?(JRUBY_VERSION)
-              $stderr.puts "directory symlinks are not followed unless using JRuby; " + 
-                           "#{entry.inspect} contents not in archive" 
-            end
-            zipfile.mkdir(entry.dup) # in case it's frozen rubyzip 0.9.6.1 workaround
-          elsif File.symlink?(src)
-            zipfile.get_output_stream(entry) { |f| f << File.read(src) }
           else
             zipfile.add(entry, src)
           end
